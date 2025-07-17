@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>XSS Demo</title>
+</head>
+<body>
+    <h1>Enter your name</h1>
+    <input type="text" name="name" id="name">
+    <input type="submit" value="submit" id="submit_button">
+    <div id="displayname"></div>
+    <script>
+        const element = document.getElementById('submit_button');
+        element.addEventListener('click', () => {
+            let v = document.getElementById('name').value;
+            // Create a script element and set its content dynamically
+            const script = document.createElement('script');
+            script.text = v; // This will execute the input as JavaScript
+            document.body.appendChild(script);
+            // Optionally display the input as text
+            document.getElementById('displayname').textContent = v;
+        });
+    </script>
+</body>
+</html>

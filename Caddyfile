@@ -1,0 +1,13 @@
+localhost {
+    # Serve static frontend files
+    root * C:/Users/ANROUT0/Desktop/chup_mg
+    file_server
+
+    # Proxy API calls to backend
+    handle_path /api/* {
+        reverse_proxy http://localhost:8001
+    }
+
+    # Disable TLS for local development (optional)
+    tls internal
+}

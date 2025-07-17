@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TaxAssist</title>
+    <script>
+        window.onload = async function() {
+    try {
+        const response = await fetch('/api/');
+        const data = await response.json();
+        console.log('Response data:', data);
+        if (data.status === 'not logged in') {
+            window.location.href = '/auth.html';
+        } else if (data.status === 'not subscribed') {
+            window.location.href = '/payment.html';
+        } else {
+            window.location.href = '/main.html';
+        }
+            
+    } catch (err) {
+        console.error('Fetch error:', err);
+    }
+}
+
+
+
+    </script>
+</head>
+<body>
+    
+</body>
+</html>

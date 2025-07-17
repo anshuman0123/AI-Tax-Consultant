@@ -1,0 +1,739 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>TaxAssist</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <!-- Add MathJax for LaTeX rendering -->
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <style>
+        body {
+            margin: 0;
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background: #343541;
+            color: #ececf1;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        .sidebar {
+            width: 240px;
+            background: #202123;
+            height: 100vh;
+            position: fixed;
+            left: 0;
+            top: 0;
+            padding: 24px 0;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+        .sidebar h2 {
+            color: #ececf1;
+            font-size: 1.2em;
+            margin: 0 24px 16px 24px;
+            font-weight: 600;
+        }
+        .sidebar button {
+            margin: 0 24px;
+            padding: 10px 16px;
+            background: #444654;
+            color: #ececf1;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: background 0.2s;
+        }
+        .sidebar button:hover {
+            background: #565869;
+        }
+        .main {
+            margin-left: 240px;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            position: relative;
+        }
+        .profile-container {
+            position: absolute;
+            top: 24px;
+            right: 32px;
+            z-index: 10;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .profile-picture {
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid #19c37d;
+            background: #444654;
+        }
+        .welcome-center {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            width: 100%;
+            z-index: 5;
+        }
+        .welcome-center h1 {
+            font-size: 3em;
+            font-weight: 700;
+            margin: 0 0 16px 0;
+            letter-spacing: 2px;
+        }
+        .welcome-center .username {
+            font-size: 2em;
+            font-weight: 500;
+            color: #19c37d;
+        }
+        .chat-container {
+            flex: 1;
+            padding: 32px 0 80px 0;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+        .message {
+            max-width: 700px;
+            margin: 0 auto;
+            padding: 16px 24px;
+            border-radius: 10px;
+            background: #444654;
+            color: #ececf1;
+            font-size: 1.1em;
+            line-height: 1.5;
+            word-break: break-word;
+        }
+        .message.fade-in {
+            animation: fadeInText 0.7s;
+        }
+        .message.user {
+            background: #2a2b32;
+            align-self: flex-end;
+            color: #ececf1;
+            text-align: right;
+            margin-left: auto;
+        }
+        .message.assistant {
+            background: #444654;
+            align-self: flex-start;
+            transition: box-shadow 0.2s;
+        }
+        .message.assistant.fade-in {
+            animation: fadeInText 0.7s;
+        }
+        .message.assistant pre, .message.assistant code {
+            background: #22232a;
+            color: #19c37d;
+            border-radius: 6px;
+            padding: 8px 12px;
+            font-family: 'Fira Mono', 'Consolas', monospace;
+            font-size: 1em;
+            overflow-x: auto;
+            display: block;
+        }
+        .message.assistant pre {
+            margin: 12px 0;
+        }
+        .message.assistant code {
+            display: inline;
+            padding: 2px 6px;
+        }
+        /* Optional: style for rendered math */
+        .message.assistant mjx-container {
+            font-size: 1.1em;
+            background: none;
+            color: #ececf1;
+        }
+        .input-bar {
+            position: fixed;
+            left: 240px;
+            bottom: 0;
+            width: calc(100% - 240px);
+            background: #343541;
+            padding: 16px 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border-top: 1px solid #444654;
+        }
+        .input-bar form {
+            width: 80%;
+            max-width: 1600px;
+            display: flex;
+            gap: 8px;
+            position: relative;
+        }
+        .input-bar .attach-wrapper {
+            position: absolute;
+            left: 0;
+            top: 0;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            z-index: 2;
+            padding-left: 10px;
+        }
+        .input-bar .attach-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            height: 100%;
+            color: #fff; /* Changed to white */
+            font-size: 1.3em;
+            transition: color 0.2s;
+        }
+        .input-bar .attach-btn:hover {
+            color: #19c37d;
+        }
+        .input-bar input[type="text"] {
+            height: 48px;
+            flex: 1 1 auto;
+            font-size: 1.1em;
+            padding: 0 16px 0 44px; /* left padding for icon */
+            border-radius: 8px;
+            border: none;
+            background: #22232a;
+            color: #ececf1;
+            min-width: 0;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        .input-bar input[type="text"]::placeholder {
+            text-align: center;
+            color: #b0b0b0;
+            opacity: 1;
+        }
+        .input-bar button {
+            width: 48px;
+            height: 48px;
+            min-width: 48px;
+            min-height: 48px;
+            max-width: 48px;
+            max-height: 48px;
+            border-radius: 50%;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #19c37d;
+            color: #000;
+            border: none;
+            margin-left: 8px;
+            transition: background 0.2s, width 0.2s, height 0.2s;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+            position: relative;
+            overflow: visible;
+        }
+        .input-bar button.streaming {
+            width: 40px;
+            height: 40px;
+            min-width: 40px;
+            min-height: 40px;
+            max-width: 40px;
+            max-height: 40px;
+        }
+        .spinner {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 64px;
+            height: 64px;
+            margin-left: -32px;
+            margin-top: -32px;
+            pointer-events: none;
+            z-index: 2;
+            display: block;
+        }
+        .input-bar button.streaming .spinner {
+            width: 56px;
+            height: 56px;
+            margin-left: -28px;
+            margin-top: -28px;
+        }
+        /* Roller spinner styles */
+        .lds-roller,
+        .lds-roller div,
+        .lds-roller div:after {
+          box-sizing: border-box;
+        }
+        .lds-roller {
+          display: inline-block;
+          position: relative;
+          width: 56px;
+          height: 56px;
+        }
+        .lds-roller div {
+          animation: lds-roller 1.2s cubic-bezier(0.5, 0, 0.5, 1) infinite;
+          transform-origin: 28px 28px;
+        }
+        .lds-roller div:after {
+          content: " ";
+          display: block;
+          position: absolute;
+          width: 6px;
+          height: 6px;
+          border-radius: 50%;
+          background: #19c37d;
+          margin: -3px 0 0 -3px;
+        }
+        .lds-roller div:nth-child(1) {
+          animation-delay: -0.036s;
+        }
+        .lds-roller div:nth-child(1):after {
+          top: 43.6px;
+          left: 43.6px;
+        }
+        .lds-roller div:nth-child(2) {
+          animation-delay: -0.072s;
+        }
+        .lds-roller div:nth-child(2):after {
+          top: 47.2px;
+          left: 38px;
+        }
+        .lds-roller div:nth-child(3) {
+          animation-delay: -0.108s;
+        }
+        .lds-roller div:nth-child(3):after {
+          top: 49.6px;
+          left: 32.1px;
+        }
+        .lds-roller div:nth-child(4) {
+          animation-delay: -0.144s;
+        }
+        .lds-roller div:nth-child(4):after {
+          top: 50.4px;
+          left: 28px;
+        }
+        .lds-roller div:nth-child(5) {
+          animation-delay: -0.18s;
+        }
+        .lds-roller div:nth-child(5):after {
+          top: 49.6px;
+          left: 23.9px;
+        }
+        .lds-roller div:nth-child(6) {
+          animation-delay: -0.216s;
+        }
+        .lds-roller div:nth-child(6):after {
+          top: 47.2px;
+          left: 18px;
+        }
+        .lds-roller div:nth-child(7) {
+          animation-delay: -0.252s;
+        }
+        .lds-roller div:nth-child(7):after {
+          top: 43.6px;
+          left: 12.4px;
+        }
+        .lds-roller div:nth-child(8) {
+          animation-delay: -0.288s;
+        }
+        .lds-roller div:nth-child(8):after {
+          top: 38px;
+          left: 8.8px;
+        }
+        @keyframes lds-roller {
+          0% {
+            transform: rotate(0deg);
+          }
+          100% {
+            transform: rotate(360deg);
+          }
+        }
+        @keyframes spin {
+            100% { transform: rotate(360deg);}
+        }
+        @media (max-width: 800px) {
+            .input-bar button, .input-bar input[type="text"] {
+                height: 40px;
+                min-height: 40px;
+                max-height: 40px;
+            }
+        }
+        .fade-in-text {
+            opacity: 0;
+            animation: fadeInText 1s forwards;
+            display: inline-block;
+        }
+        @keyframes fadeInText {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        @media (max-width: 800px) {
+            .sidebar {
+                width: 60px;
+                padding: 12px 0;
+            }
+            .sidebar h2, .sidebar button {
+                display: none;
+            }
+            .main {
+                margin-left: 60px;
+            }
+            .input-bar {
+                left: 60px;
+                width: calc(100% - 60px);
+            }
+            .profile-container {
+                right: 12px;
+                top: 12px;
+            }
+            .profile-picture {
+                width: 40px;
+                height: 40px;
+            }
+            .welcome-center h1 {
+                font-size: 2em;
+            }
+            .welcome-center .username {
+                font-size: 1.2em;
+            }
+        }
+        /* Custom alert modal styles */
+#custom-alert-backdrop {
+    position: fixed;
+    z-index: 9999;
+    inset: 0;
+    background: rgba(0,0,0,0.35);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+#custom-alert-modal {
+    background: #22232a;
+    color: #ececf1;
+    border-radius: 12px;
+    padding: 32px 28px 20px 28px;
+    max-width: 90vw;
+    width: 370px;
+    box-shadow: 0 8px 32px #0008;
+    text-align: left;
+    font-size: 1.08em;
+    position: relative;
+}
+#custom-alert-modal p {
+    margin: 0 0 18px 0;
+    white-space: pre-line;
+}
+#custom-alert-modal .alert-btns {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+}
+#custom-alert-modal button {
+    padding: 7px 18px;
+    border-radius: 6px;
+    border: none;
+    font-size: 1em;
+    cursor: pointer;
+    background: #19c37d;
+    color: #22232a;
+    font-weight: 500;
+    transition: background 0.2s;
+}
+#custom-alert-modal button.cancel {
+    background: #444654;
+    color: #ececf1;
+}
+#custom-alert-modal button.cancel:hover {
+    background: #565869;
+}
+#custom-alert-modal button.ok:hover {
+    background: #13a06b;
+}
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <h2>TaxAssist</h2>
+        <button onclick="clearChat()">+ New Chat</button>
+    </div>
+    <div class="main">
+        <div class="profile-container" id="profile-container" style="display: none;">
+            <img src="" alt="Profile" class="profile-picture" id="profile-picture">
+        </div>
+        <div class="welcome-center" id="welcome-center" style="display: none;">
+            <h1>Welcome</h1>
+            <div class="username" id="username"></div>
+        </div>
+        <div class="chat-container" id="chat">
+            <!-- Messages will appear here -->
+        </div>
+        <div class="input-bar">
+            <form id="chat-form" autocomplete="off">
+                <span class="attach-wrapper">
+                    <button type="button" class="attach-btn" id="attach-btn" aria-label="Attach file">
+                        <!-- Paperclip SVG icon -->
+                        <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+                            <path d="M16.5 8.5V15C16.5 17.2091 14.7091 19 12.5 19C10.2909 19 8.5 17.2091 8.5 15V6.5C8.5 5.39543 9.39543 4.5 10.5 4.5C11.6046 4.5 12.5 5.39543 12.5 6.5V15C12.5 15.2761 12.2761 15.5 12 15.5C11.7239 15.5 11.5 15.2761 11.5 15V6.5H10.5V15C10.5 16.1046 11.3954 17 12.5 17C13.6046 17 14.5 16.1046 14.5 15V8.5H16.5Z" stroke="currentColor" stroke-width="1.5"/>
+                        </svg>
+                    </button>
+                </span>
+                <input type="text" id="user-input" placeholder="Type your message..." required />
+                <input type="file" id="file-input" style="display:none" />
+                <button type="submit" id="send-btn" aria-label="Send">
+                    <span id="send-icon">
+                        <!-- Upward arrow SVG (black) -->
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                            <path d="M12 4L12 20" stroke="black" stroke-width="2" stroke-linecap="round"/>
+                            <path d="M6 10L12 4L18 10" stroke="black" stroke-width="2" stroke-linecap="round"/>
+                        </svg>
+                    </span>
+                </button>
+            </form>
+        </div>
+    </div>
+    <script>
+            window.MathJax = window.MathJax || {};
+window.MathJax.startup = window.MathJax.startup || {};
+window.MathJax.startup.ready = () => {
+    console.log("MathJax is ready!"); 
+}
+        // User profile and welcome logic
+        function showWelcomeAndProfile() {
+            
+            let userStr = localStorage.getItem('user');
+            if (!userStr) return;
+            try {
+                const user = JSON.parse(userStr).user;
+                if (user && user.name && user.picture) {
+                    document.getElementById('username').textContent = user.name;
+                    document.getElementById('profile-picture').src = user.picture;
+                    document.getElementById('profile-container').style.display = 'flex';
+                    document.getElementById('welcome-center').style.display = 'block';
+                }
+            } catch (e) {
+                // Invalid user object
+            }
+        }
+        showWelcomeAndProfile();
+
+        // Chat logic
+        const chat = document.getElementById('chat');
+        const form = document.getElementById('chat-form');
+        const input = document.getElementById('user-input');
+
+        let currentAssistantMsg = null;
+        let currentAssistantContent = ""; // Store the full markdown content
+
+        function addMessage(text, sender) {
+            const msg = document.createElement('div');
+            msg.className = 'message ' + sender;
+            const span = document.createElement('span');
+            span.className = 'fade-in-text';
+            if (sender === 'assistant') {
+                span.innerHTML = marked.parse(text);
+            } else {
+                span.textContent = text;
+            }
+            msg.appendChild(span);
+            chat.appendChild(msg);
+            chat.scrollTop = chat.scrollHeight;
+            if (sender === 'assistant') {
+                currentAssistantMsg = msg;
+                currentAssistantContent = text;
+            }
+        }
+
+        // Helper to append chunk with fade-in, markdown, and MathJax rendering
+        async function appendAssistantChunk(chunk) {
+            if (!currentAssistantMsg) {
+                addMessage('', 'assistant');
+            }
+            const span = currentAssistantMsg.querySelector('.fade-in-text');
+            span.classList.remove('fade-in-text');
+            currentAssistantContent += chunk;
+            span.innerHTML = marked.parse(currentAssistantContent);
+            // Trigger reflow for animation restart
+            void span.offsetWidth;
+            span.classList.add('fade-in-text');
+            chat.scrollTop = chat.scrollHeight;
+            if (window.MathJax && window.MathJax.typesetPromise) {
+                try {
+                    await MathJax.typesetPromise([currentAssistantMsg]);
+                } catch (e) {
+                    setTimeout(() => MathJax.typesetPromise([currentAssistantMsg]), 200);
+                }
+            }
+        }
+
+const sendBtn = document.getElementById('send-btn');
+const sendIcon = document.getElementById('send-icon');
+
+function setSendButtonState(isStreaming) {
+    if (isStreaming) {
+        sendBtn.classList.add('streaming');
+        // Show spinner and black square
+        sendIcon.innerHTML = `
+            <svg width="24" height="24" viewBox="0 0 24 24">
+                <rect x="7" y="7" width="10" height="10" fill="black" rx="2"/>
+            </svg>
+        `;
+        // Add roller spinner if not present
+        if (!sendBtn.querySelector('.spinner')) {
+            const spinner = document.createElement('span');
+            spinner.className = 'spinner';
+            spinner.innerHTML = `
+                <div class="lds-roller">
+                  <div></div><div></div><div></div><div></div>
+                  <div></div><div></div><div></div><div></div>
+                </div>
+            `;
+            sendBtn.appendChild(spinner);
+        }
+        sendBtn.disabled = true;
+    } else {
+        sendBtn.classList.remove('streaming');
+        sendIcon.innerHTML = `
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                <path d="M12 4L12 20" stroke="black" stroke-width="2" stroke-linecap="round"/>
+                <path d="M6 10L12 4L18 10" stroke="black" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+        `;
+        // Remove spinner if present
+        const spinner = sendBtn.querySelector('.spinner');
+        if (spinner) spinner.remove();
+        sendBtn.disabled = false;
+    }
+}
+
+// Handle Enter key for sending
+input.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        if (!sendBtn.disabled) {
+            form.dispatchEvent(new Event('submit', {cancelable: true, bubbles: true}));
+        }
+    }
+});
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const userText = input.value.trim();
+            if (!userText) return;
+            addMessage(userText, 'user');
+            input.value = '';
+            currentAssistantMsg = null; // Reset for new assistant message
+            currentAssistantContent = '';
+            setSendButtonState(true); // Disable and show square
+
+            fetch('/api/answer', {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Question': userText
+                },
+                credentials:"include"
+                //body: JSON.stringify({ question: userText })
+            })
+            .then(response => {
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder("utf-8");
+
+                function readStream() {
+                    reader.read().then(({ done, value }) => {
+                        if (done) {
+                            setSendButtonState(false); // Enable and show arrow
+                            return;
+                        }
+                        const chunk = decoder.decode(value, { stream: true });
+                        appendAssistantChunk(chunk);
+                        readStream();
+                    });
+                }
+                readStream();
+            })
+            .catch(() => {
+                addMessage('Error contacting server.', 'assistant');
+                setSendButtonState(false); // Enable and show arrow
+            });
+        });
+
+        function clearChat() {
+            fetch('/api/new_chat', {
+                method: 'POST',
+                credentials: 'include'
+            });
+            chat.innerHTML = '';
+            currentAssistantMsg = null;
+            currentAssistantContent = '';
+        }
+        localStorage.clear()
+
+        function showCustomAlert(message, okCallback, cancelCallback) {
+    // Remove any existing modal
+    const old = document.getElementById('custom-alert-backdrop');
+    if (old) old.remove();
+
+    const backdrop = document.createElement('div');
+    backdrop.id = 'custom-alert-backdrop';
+
+    const modal = document.createElement('div');
+    modal.id = 'custom-alert-modal';
+
+    const msg = document.createElement('p');
+    msg.textContent = message;
+    modal.appendChild(msg);
+
+    const btns = document.createElement('div');
+    btns.className = 'alert-btns';
+
+    const cancelBtn = document.createElement('button');
+    cancelBtn.textContent = 'Cancel';
+    cancelBtn.className = 'cancel';
+    cancelBtn.onclick = () => {
+        backdrop.remove();
+        if (cancelCallback) cancelCallback();
+    };
+
+    const okBtn = document.createElement('button');
+    okBtn.textContent = 'OK';
+    okBtn.className = 'ok';
+    okBtn.onclick = () => {
+        backdrop.remove();
+        if (okCallback) okCallback();
+    };
+
+    btns.appendChild(cancelBtn);
+    btns.appendChild(okBtn);
+    modal.appendChild(btns);
+    backdrop.appendChild(modal);
+    document.body.appendChild(backdrop);
+}
+
+document.getElementById('attach-btn').addEventListener('click', function() {
+    showCustomAlert(
+        "Only upload files necessary for tax purposes.\n\n" +
+        "File name should be as per the contents of it.\n" +
+        "For example:\n" +
+        "• Form 16 file name should be form16.pdf\n" +
+        "• Pay slip file name should be payslip.pdf",
+        function ok() {
+            document.getElementById('file-input').click();
+        },
+        function cancel() {
+            // Do nothing
+        }
+    );
+});
+    window.addEventListener('beforeunload', function (e) {
+        // Send POST request to /api/new_chat before unload using fetch
+        fetch('/api/new_chat', {
+            method: 'POST',
+            credentials: 'include', 
+        });
+    });
+    </script>
+</body>
+</html>

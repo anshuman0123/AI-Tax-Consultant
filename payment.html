@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+  <input type="button" value="Create Payment" onclick="func()">
+  <script>
+    async function func() {
+      // Declare paymentWindow at the function scope
+      let paymentWindow = null;
+
+      try {
+        // Open the window with a placeholder URL or your actual payment initiation URL
+        paymentWindow = window.open("about:blank", "payment_window", "width=500,height=500,resizable=yes");
+        if (!paymentWindow) {
+          console.error("Failed to open payment window. Check if popups are blocked.");
+          return;
+        }
+
+        // Set up Server-Sent Events (SSE) connection
+        const eventSource = new EventSource('https://localhost/api/create_payment');
+
+        eventSource.onmessage = function(event) {
+          try {
+            const data = JSON.parse(event.data);
+            console.log('Parsed data:', data);
+
+            if (data.message === 'payment init') {
+              // Navigate the window to the payment link
+              paymentWindow.location.href = data.payment_link;
+            }
+
+            if (data.message === 'payment result') {
+              // Check if the window is still open
+              if (paymentWindow && !paymentWindow.closed) {
+                paymentWindow.close();
+                console.log("Payment window closed successfully.");
+              } else {
+                console.log("Payment window not found or already closed.");
+              }
+              eventSource.close(); // Close the SSE connection
+            }
+          } catch (e) {
+            console.error('Error processing event:', e);
+          }
+        };
+
+        eventSource.onerror = function() {
+          console.error('SSE error occurred');
+          eventSource.close();
+          // Attempt to close the payment window on SSE error
+          if (paymentWindow && !paymentWindow.closed) {
+            paymentWindow.close();
+            console.log("Payment window closed due to SSE error.");
+          }
+        };
+      } catch (e) {
+        console.error('Error in func:', e);
+        // Clean up if an error occurs
+        if (paymentWindow && !paymentWindow.closed) {
+          paymentWindow.close();
+          console.log("Payment window closed due to error.");
+        }
+      }
+    }
+  </script>
+</body>
+</html>
+
+
+
+
+
+
+

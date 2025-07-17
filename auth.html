@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Auth Page - TaxAssist</title>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #4f46e5 0%, #1e40af 100%);
+            background-attachment: fixed;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Inter', sans-serif;
+        }
+        .auth-container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 16px;
+            padding: 3rem;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            max-width: 420px;
+            width: 100%;
+            animation: fadeIn 0.5s ease-out;
+            margin: 1rem;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .logo {
+            font-weight: 700;
+            font-size: 1.75rem;
+            color: #4f46e5;
+            text-align: center;
+            margin-bottom: 0.5rem;
+        }
+        .tagline {
+            color: #6b7280;
+            text-align: center;
+            margin-bottom: 2rem;
+            font-size: 0.95rem;
+        }
+        .input-field {
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 0.875rem 1rem;
+            width: 100%;
+            color: #111827;
+            transition: all 0.3s ease;
+            margin-bottom: 1rem;
+        }
+        .input-field:focus {
+            outline: none;
+            border-color: #4f46e5;
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.2);
+            background: #fff;
+        }
+        .btn-primary {
+            background: linear-gradient(90deg, #4f46e5, #4338ca);
+            color: #ffffff;
+            font-weight: 600;
+            padding: 0.875rem 1.5rem;
+            border-radius: 8px;
+            border: none;
+            width: 100%;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            margin-top: 0.5rem;
+        }
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.2);
+        }
+        .btn-primary:active {
+            transform: translateY(0);
+        }
+        .divider {
+            display: flex;
+            align-items: center;
+            margin: 1.5rem 0;
+            color: #9ca3af;
+            font-size: 0.875rem;
+        }
+        .divider::before, .divider::after {
+            content: "";
+            flex: 1;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        .divider::before {
+            margin-right: 1rem;
+        }
+        .divider::after {
+            margin-left: 1rem;
+        }
+        #otpInput {
+            width: 100%;
+            text-align: center;
+            letter-spacing: 0.5rem;
+            font-size: 1.25rem;
+            margin: 0 auto 1.5rem;
+            display: block;
+            padding: 0.75rem;
+        }
+        .otp-instructions {
+            color: #6b7280;
+            font-size: 0.875rem;
+            text-align: center;
+            margin-bottom: 1.5rem;
+        }
+        .back-link {
+            color: #4f46e5;
+            text-align: center;
+            display: block;
+            margin-top: 1.5rem;
+            font-size: 0.875rem;
+            cursor: pointer;
+        }
+        .back-link:hover {
+            text-decoration: underline;
+        }
+        .g_id_signin {
+            width: 100% !important;
+            margin-top: 1rem;
+        }
+        .g_id_signin > div {
+            margin: 0 auto !important;
+            width: 100% !important;
+        }
+    </style>
+</head>
+<body>
+    <div class="auth-container">
+        <div class="logo">TaxAssist</div>
+        <div class="tagline">Simplify your tax management</div>
+        
+        <div id="initialView">
+            <h2 class="text-xl font-semibold text-gray-800 text-center mb-6">Sign in to your account</h2>
+            
+            <div id="g_id_onload"
+                 data-client_id="482767827533-lqvp2m57si3m5j1ool7u2t9k469d0lgj.apps.googleusercontent.com"
+                 data-context="signin"
+                 data-ux_mode="popup"
+                 data-callback="onSignIn"
+                 data-auto_prompt="false">
+            </div>
+            
+            <div class="g_id_signin"
+                 data-type="standard"
+                 data-shape="rectangular"
+                 data-theme="filled_blue"
+                 data-text="signin_with"
+                 data-size="large"
+                 data-logo_alignment="left"
+                 data-width="400">
+            </div>
+            
+            <div class="divider">or</div>
+            
+            <input type="email" class="input-field" placeholder="Email address">
+            <input type="password" class="input-field" placeholder="Password">
+            <button class="btn-primary">Sign in</button>
+            
+            <div class="text-center text-sm text-gray-600 mt-4">
+                Don't have an account? <a href="#" class="text-indigo-600 hover:underline">Sign up</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function onSignIn(response) {
+            fetch('/api/login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ credential: response.credential })
+            })
+            .then(res => res.json())
+            .then(data => {
+                console.log('Server response:', data);
+                localStorage.setItem('user', JSON.stringify(data));
+                
+                // Show mobile verification UI
+                const authContainer = document.querySelector('.auth-container');
+                authContainer.innerHTML = `
+                    <div class="logo">TaxAssist</div>
+                    <div class="tagline">Secure account verification</div>
+                    
+                    <div id="verificationView">
+                        <h2 class="text-xl font-semibold text-gray-800 text-center mb-4">Verify Your Mobile Number</h2>
+                        <p class="otp-instructions">We'll send a verification code to your mobile number</p>
+                        
+                        <input type="tel" id="mobileInput" class="input-field" placeholder="Enter mobile number" maxlength="10" />
+                        <button id="sendOtpBtn" class="btn-primary">Send Verification Code</button>
+                        
+                        <div id="otpSection" class="hidden">
+                            <p class="otp-instructions">Enter the 4-digit code sent to your mobile</p>
+                            <input type="text" id="otpInput" maxlength="4" class="input-field" placeholder="____" />
+                            <button id="verifyOtpBtn" class="btn-primary">Verify Code</button>
+                            <div class="text-center text-sm text-gray-600 mt-3">
+                                Didn't receive code? <a href="#" id="resendOtp" class="text-indigo-600 hover:underline">Resend</a>
+                            </div>
+                        </div>
+                        
+                        <a id="backToSignIn" class="back-link">Back to sign in options</a>
+                    </div>
+                `;
+
+                document.getElementById('sendOtpBtn').onclick = function() {
+                    const mobile = document.getElementById('mobileInput').value;
+                    if (!/^\d{10}$/.test(mobile)) {
+                        alert('Please enter a valid 10-digit mobile number.');
+                        return;
+                    }
+                    
+                    // Disable the button and show loading state
+                    this.disabled = true;
+                    this.textContent = 'Sending...';
+                    
+                    // Simulate API call
+                    setTimeout(() => {
+                        document.getElementById('otpSection').classList.remove('hidden');
+                        this.textContent = 'Code Sent!';
+                        document.getElementById('mobileInput').disabled = true;
+                    }, 1500);
+                };
+
+                document.getElementById('verifyOtpBtn').onclick = function() {
+                    const otp = document.getElementById('otpInput').value;
+                    if (!/^\d{4}$/.test(otp)) {
+                        alert('Please enter a valid 4-digit code.');
+                        return;
+                    }
+                    
+                    // Show loading state
+                    this.disabled = true;
+                    this.textContent = 'Verifying...';
+                    
+                    // Simulate verification
+                    setTimeout(() => {
+                        window.location.href = 'https://localhost/main.html';
+                    }, 1000);
+                };
+
+                document.getElementById('resendOtp').onclick = function(e) {
+                    e.preventDefault();
+                    alert('New verification code sent!');
+                };
+
+                document.getElementById('backToSignIn').onclick = function() {
+                    window.location.reload();
+                };
+            })
+            .catch(err => {
+                console.error('Error:', err);
+                alert('An error occurred during sign in. Please try again.');
+            });
+        }
+    </script>
+</body>
+</html>

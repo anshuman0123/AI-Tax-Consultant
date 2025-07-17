@@ -1,0 +1,15 @@
+[UserContent(
+  parts=[
+    Part(
+      text='Hi'
+    ),
+  ],
+  role='user'
+), Content(
+  parts=[
+    Part(
+      text='Hi there! How can I help you today?'
+    ),
+  ],
+  role='model'
+)]
