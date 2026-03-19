@@ -27,12 +27,12 @@ collection = db["userdetails"]
 payment_confo = asyncio.Future()
 
 # Initialize a Pinecone client with your API key
-pc = Pinecone(api_key="pcsk_6vNZC9_BSAwXcKEzWvsT4LnvANDHxaUcpD7ENiUUQjX6PRPZDqYroAomH9poByvykEm4tP")
+pc = Pinecone(api_key="Your_Pine_Cone_API_KEY")
 
 app = FastAPI()
 from google import genai
 
-client = genai.Client(api_key="AIzaSyAZ7dtvfCTX0X8V6Qfaxi6TN_VQ9rCM9wo")
+client = genai.Client(api_key="Your_genai_api_key")
 chat = client.chats.create(model="gemini-2.5-flash")
 chats = []
 
