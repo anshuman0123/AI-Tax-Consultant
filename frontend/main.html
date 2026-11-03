@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>TaxAssist - AI Tax Consultant</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #202123;
+            color: #ececf1;
+            height: 100vh;
+            display: flex;
+            overflow: hidden;
+        }
+        .sidebar {
+            width: 260px;
+            background: #202123;
+            border-right: 1px solid #343541;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            padding: 16px;
+            gap: 12px;
+            z-index: 20;
+        }
+        .sidebar-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px;
+            margin-bottom: 8px;
+        }
+        .logo-icon {
+            width: 32px;
+            height: 32px;
+            background: #10a37f;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            color: white;
+            font-size: 1.1rem;
+        }
+        .sidebar h2 {
+            color: #ececf1;
+            font-size: 1.15rem;
+            font-weight: 600;
+        }
+        .new-chat-btn {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 14px;
+            background: #343541;
+            color: #ececf1;
+            border: 1px solid #444654;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.95rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+        .new-chat-btn:hover {
+            background: #40414f;
+            border-color: #565869;
+        }
+        .sidebar-content {
+            flex: 1;
+            overflow-y: auto;
+            color: #8e8ea0;
+            font-size: 0.85rem;
+            padding: 12px 4px;
+            line-height: 1.5;
+        }
+        .sidebar-footer {
+            border-top: 1px solid #343541;
+            padding-top: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .user-badge {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px;
+            border-radius: 8px;
+            background: #2a2b32;
+        }
+        .user-avatar {
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid #10a37f;
+        }
+        .user-name {
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: #ececf1;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .logout-btn {
+            background: transparent;
+            border: 1px solid #444654;
+            color: #ef4444;
+            border-radius: 6px;
+            padding: 8px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .logout-btn:hover {
+            background: rgba(239, 68, 68, 0.1);
+        }
+        .main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            position: relative;
+            background: #343541;
+        }
+        .welcome-center {
+            position: absolute;
+            top: 45%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            max-width: 600px;
+            width: 90%;
+            z-index: 5;
+        }
+        .welcome-center h1 {
+            font-size: 2.25rem;
+            font-weight: 700;
+            margin-bottom: 0.75rem;
+            color: #ffffff;
+        }
+        .welcome-center .username {
+            font-size: 1.5rem;
+            color: #10a37f;
+            font-weight: 600;
+            margin-bottom: 1rem;
+        }
+        .welcome-center p {
+            color: #9ca3af;
+            font-size: 1rem;
+            line-height: 1.5;
+        }
+        .chat-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 24px 16px 120px 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            max-width: 860px;
+            width: 100%;
+            margin: 0 auto;
+        }
+        .message {
+            display: flex;
+            gap: 16px;
+            padding: 16px 20px;
+            border-radius: 12px;
+            line-height: 1.6;
+            font-size: 0.975rem;
+            animation: fadeInMsg 0.3s ease-out;
+            max-width: 100%;
+        }
+        @keyframes fadeInMsg {
+            from { opacity: 0; transform: translateY(6px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .message.user {
+            background: #40414f;
+            color: #ffffff;
+            margin-left: auto;
+            border-radius: 14px 14px 2px 14px;
+            max-width: 80%;
+        }
+        .message.assistant {
+            background: #2a2b32;
+            color: #ececf1;
+            border: 1px solid #3e3f4b;
+            border-radius: 14px 14px 14px 2px;
+            width: 100%;
+        }
+        .message.assistant h1, .message.assistant h2, .message.assistant h3 {
+            margin: 1rem 0 0.5rem 0;
+            color: #ffffff;
+        }
+        .message.assistant p {
+            margin-bottom: 0.75rem;
+        }
+        .message.assistant code {
+            background: #1e1e24;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.9em;
+            color: #38bdf8;
+        }
+        .message.assistant pre code {
+            display: block;
+            padding: 12px;
+            overflow-x: auto;
+            margin: 8px 0;
+        }
+        .message.assistant ul, .message.assistant ol {
+            padding-left: 20px;
+            margin-bottom: 0.75rem;
+        }
+        .input-bar-container {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(180deg, rgba(52, 53, 65, 0) 0%, #343541 35%);
+            padding: 16px 24px 28px 24px;
+            display: flex;
+            justify-content: center;
+        }
+        .input-bar {
+            max-width: 860px;
+            width: 100%;
+            background: #40414f;
+            border: 1px solid #565869;
+            border-radius: 12px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+            display: flex;
+            align-items: center;
+            padding: 6px 12px;
+            gap: 8px;
+        }
+        .input-bar:focus-within {
+            border-color: #10a37f;
+            box-shadow: 0 0 0 2px rgba(16, 163, 127, 0.25);
+        }
+        .attach-btn {
+            background: transparent;
+            border: none;
+            color: #8e8ea0;
+            cursor: pointer;
+            padding: 6px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            transition: color 0.2s;
+        }
+        .attach-btn:hover {
+            color: #ececf1;
+            background: #4e4f60;
+        }
+        .user-text-input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: #ffffff;
+            font-size: 0.975rem;
+            padding: 10px 4px;
+            outline: none;
+        }
+        .user-text-input::placeholder {
+            color: #8e8ea0;
+        }
+        .send-btn {
+            width: 36px;
+            height: 36px;
+            background: #10a37f;
+            border: none;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            color: white;
+        }
+        .send-btn:hover:not(:disabled) {
+            background: #0e8c6d;
+        }
+        .send-btn:disabled {
+            background: #565869;
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+        .send-btn.streaming {
+            background: #dc2626;
+        }
+        /* Modal Backdrop */
+        #custom-alert-backdrop {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0, 0, 0, 0.65);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+        }
+        #custom-alert-modal {
+            background: #202123;
+            border: 1px solid #444654;
+            border-radius: 14px;
+            padding: 24px;
+            max-width: 440px;
+            width: 90%;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+        }
+        #custom-alert-modal p {
+            margin-bottom: 20px;
+            line-height: 1.5;
+            color: #d1d5db;
+            white-space: pre-line;
+            font-size: 0.95rem;
+        }
+        .alert-btns {
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+        }
+        .alert-btns button {
+            padding: 8px 16px;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            font-weight: 500;
+            font-size: 0.9rem;
+        }
+        .alert-btns .ok {
+            background: #10a37f;
+            color: white;
+        }
+        .alert-btns .cancel {
+            background: #3e3f4b;
+            color: #ececf1;
+        }
+    </style>
+</head>
+<body>
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <div class="logo-icon">T</div>
+            <h2>TaxAssist</h2>
+        </div>
+        <button class="new-chat-btn" onclick="clearChat()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+            New Consultation
+        </button>
+        <div class="sidebar-content">
+            <p><strong>RAG Tax Advisory</strong></p>
+            <p style="margin-top: 8px;">Semantic vector lookup over the Indian Income Tax Act 1961 powered by Pinecone & Google Gemini.</p>
+        </div>
+        <div class="sidebar-footer">
+            <div class="user-badge" id="userBadge" style="display: none;">
+                <img src="" alt="Avatar" class="user-avatar" id="userAvatar">
+                <span class="user-name" id="userNameDisplay">User</span>
+            </div>
+            <button class="logout-btn" onclick="handleLogout()">Sign Out</button>
+        </div>
+    </aside>
+
+    <!-- Main Workspace -->
+    <main class="main">
+        <div class="welcome-center" id="welcomeCenter">
+            <h1>Indian Tax Advisory</h1>
+            <div class="username" id="welcomeUsername">Welcome</div>
+            <p>Ask any questions regarding tax slabs, Section 80C deductions, capital gains, corporate taxation, or recent amendments.</p>
+        </div>
+
+        <div class="chat-container" id="chat"></div>
+
+        <div class="input-bar-container">
+            <form class="input-bar" id="chatForm" autocomplete="off">
+                <button type="button" class="attach-btn" id="attachBtn" title="Upload Document">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/>
+                    </svg>
+                </button>
+                <input type="file" id="fileInput" style="display: none;" />
+                <input type="text" id="userInput" class="user-text-input" placeholder="Ask about income tax provisions, deductions, or calculations..." required />
+                <button type="submit" class="send-btn" id="sendBtn" title="Send Question">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="22" y1="2" x2="11" y2="13"></line>
+                        <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                    </svg>
+                </button>
+            </form>
+        </div>
+    </main>
+
+    <script>
+        // Profile Display Setup
+        function initUserProfile() {
+            try {
+                const userJson = localStorage.getItem('user');
+                if (userJson) {
+                    const parsed = JSON.parse(userJson).user;
+                    if (parsed && parsed.name) {
+                        document.getElementById('welcomeUsername').textContent = `Hello, ${parsed.name}`;
+                        document.getElementById('userNameDisplay').textContent = parsed.name;
+                        document.getElementById('userBadge').style.display = 'flex';
+                        if (parsed.picture) {
+                            document.getElementById('userAvatar').src = parsed.picture;
+                        } else {
+                            document.getElementById('userAvatar').src = `https://ui-avatars.com/api/?name=${encodeURIComponent(parsed.name)}&background=10a37f&color=fff`;
+                        }
+                    }
+                }
+            } catch (e) {
+                console.warn('Error reading profile info:', e);
+            }
+        }
+        initUserProfile();
+
+        const chat = document.getElementById('chat');
+        const form = document.getElementById('chatForm');
+        const input = document.getElementById('userInput');
+        const sendBtn = document.getElementById('sendBtn');
+        const welcomeCenter = document.getElementById('welcomeCenter');
+
+        let currentAssistantMsg = null;
+        let currentAssistantContent = "";
+
+        function addMessage(text, sender) {
+            welcomeCenter.style.display = 'none';
+            const msg = document.createElement('div');
+            msg.className = `message ${sender}`;
+            
+            if (sender === 'assistant') {
+                msg.innerHTML = marked.parse(text);
+                currentAssistantMsg = msg;
+                currentAssistantContent = text;
+            } else {
+                msg.textContent = text;
+            }
+
+            chat.appendChild(msg);
+            chat.scrollTop = chat.scrollHeight;
+        }
+
+        async function appendAssistantChunk(chunk) {
+            welcomeCenter.style.display = 'none';
+            if (!currentAssistantMsg) {
+                addMessage('', 'assistant');
+            }
+            currentAssistantContent += chunk;
+            currentAssistantMsg.innerHTML = marked.parse(currentAssistantContent);
+            chat.scrollTop = chat.scrollHeight;
+
+            if (window.MathJax && window.MathJax.typesetPromise) {
+                try {
+                    await MathJax.typesetPromise([currentAssistantMsg]);
+                } catch (e) {
+                    // Retry MathJax typeset on failure
+                }
+            }
+        }
+
+        function setStreamingState(isStreaming) {
+            sendBtn.disabled = isStreaming;
+            if (isStreaming) {
+                sendBtn.classList.add('streaming');
+                sendBtn.innerHTML = `
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="white">
+                        <rect x="4" y="4" width="16" height="16" rx="2"/>
+                    </svg>
+                `;
+            } else {
+                sendBtn.classList.remove('streaming');
+                sendBtn.innerHTML = `
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="22" y1="2" x2="11" y2="13"></line>
+                        <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                    </svg>
+                `;
+            }
+        }
+
+        form.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const userQuestion = input.value.trim();
+            if (!userQuestion) return;
+
+            addMessage(userQuestion, 'user');
+            input.value = '';
+            currentAssistantMsg = null;
+            currentAssistantContent = '';
+            setStreamingState(true);
+
+            try {
+                // Send query via clean POST body
+                const response = await fetch('/api/answer', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Question': encodeURIComponent(userQuestion) // Backwards compatibility
+                    },
+                    credentials: 'include',
+                    body: JSON.stringify({ question: userQuestion })
+                });
+
+                if (response.status === 401) {
+                    window.location.replace('/auth.html');
+                    return;
+                }
+                if (response.status === 403) {
+                    window.location.replace('/payment.html');
+                    return;
+                }
+                if (!response.ok) {
+                    throw new Error('Server error: ' + response.status);
+                }
+
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder('utf-8');
+
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+                    const chunk = decoder.decode(value, { stream: true });
+                    await appendAssistantChunk(chunk);
+                }
+
+            } catch (err) {
+                console.error('Streaming error:', err);
+                addMessage('Unable to complete advisory request. Please verify server connection and API keys.', 'assistant');
+            } finally {
+                setStreamingState(false);
+            }
+        });
+
+        function clearChat() {
+            fetch('/api/new_chat', {
+                method: 'POST',
+                credentials: 'include'
+            });
+            chat.innerHTML = '';
+            currentAssistantMsg = null;
+            currentAssistantContent = '';
+            welcomeCenter.style.display = 'block';
+        }
+
+        function handleLogout() {
+            fetch('/api/logout', { method: 'POST', credentials: 'include' })
+                .finally(() => {
+                    localStorage.removeItem('user');
+                    window.location.replace('/auth.html');
+                });
+        }
+
+        // Custom Modal Alert for file attachment
+        function showCustomAlert(message, onOk) {
+            const old = document.getElementById('custom-alert-backdrop');
+            if (old) old.remove();
+
+            const backdrop = document.createElement('div');
+            backdrop.id = 'custom-alert-backdrop';
+
+            const modal = document.createElement('div');
+            modal.id = 'custom-alert-modal';
+
+            const msg = document.createElement('p');
+            msg.textContent = message;
+            modal.appendChild(msg);
+
+            const btns = document.createElement('div');
+            btns.className = 'alert-btns';
+
+            const cancelBtn = document.createElement('button');
+            cancelBtn.textContent = 'Cancel';
+            cancelBtn.className = 'cancel';
+            cancelBtn.onclick = () => backdrop.remove();
+
+            const okBtn = document.createElement('button');
+            okBtn.textContent = 'Continue';
+            okBtn.className = 'ok';
+            okBtn.onclick = () => {
+                backdrop.remove();
+                if (onOk) onOk();
+            };
+
+            btns.appendChild(cancelBtn);
+            btns.appendChild(okBtn);
+            modal.appendChild(btns);
+            backdrop.appendChild(modal);
+            document.body.appendChild(backdrop);
+        }
+
+        document.getElementById('attachBtn').addEventListener('click', function() {
+            showCustomAlert(
+                "Upload tax-related reference documents.\n\n" +
+                "Recommended document types:\n" +
+                "• Form 16 (TDS certificate)\n" +
+                "• Monthly salary slip\n" +
+                "• Capital gains statement",
+                () => document.getElementById('fileInput').click()
+            );
+        });
+    </script>
+</body>
+</html>

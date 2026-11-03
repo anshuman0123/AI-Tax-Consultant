@@ -1,13 +1,14 @@
+# Caddy Configuration for AI Tax Consultant Local Development
 localhost {
     # Serve static frontend files
-    root * C:/Users/ANROUT0/Desktop/chup_mg
+    root * ./frontend
     file_server
 
-    # Proxy API calls to backend
+    # Reverse proxy API requests to FastAPI backend
     handle_path /api/* {
-        reverse_proxy http://localhost:8001
+        reverse_proxy http://127.0.0.1:8001
     }
 
-    # Disable TLS for local development (optional)
+    # Automatic local HTTPS using internal CA
     tls internal
 }
